@@ -190,7 +190,7 @@ export function StrukDialog({ order }: { order: Order }) {
         <DialogHeader>
           <DialogTitle className="tabular">Struk {order.orderNumber}</DialogTitle>
           <DialogDescription>
-            Pratinjau sama seperti form cetak Rossy. Bisa dicetak (A5), disimpan sebagai foto,
+            Pratinjau sama seperti form cetak Rossy. Bisa dicetak (A4), disimpan sebagai foto,
             atau dibagikan.
           </DialogDescription>
         </DialogHeader>
