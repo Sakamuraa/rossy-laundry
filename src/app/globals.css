@@ -123,6 +123,8 @@
 
   html.printing-struk body * {
     visibility: hidden !important;
+    /* Container ber-scroll di sekitar struk ikut memotong saat dicetak. */
+    overflow: visible !important;
   }
 
   html.printing-struk #struk,
@@ -130,13 +132,18 @@
     visibility: visible !important;
   }
 
+  /*
+   * Lebar WAJIB eksplisit. `width: auto` pada elemen absolut tanpa `right`
+   * menghitung shrink-to-fit, dan karena di dalam ada <table>, hasilnya bisa
+   * jauh lebih lebar dari kertas A5 sehingga terpotong.
+   */
   html.printing-struk #struk {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
-    width: auto !important;
+    width: 460px !important;
     margin: 0 !important;
-    padding: 0 !important;
     box-shadow: none !important;
+    transform: none !important;
   }
 }

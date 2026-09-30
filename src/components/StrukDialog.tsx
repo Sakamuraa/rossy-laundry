@@ -39,10 +39,59 @@ export function StrukDialog({ order }: { order: Order }) {
     window.setTimeout(done, 3000);
   }
 
+  /**
+   * Potret struk ke PNG.
+   *
+   * Elemen aslinya duduk di dalam `overflow-x-auto` (pratinjau mobile) sehingga
+   * html-to-image ikut memotong di 344px dari lebar 460px: kolom Harga, S&K poin 6,
+   * dan slogan kanan hilang. Maka disalin dulu ke wadah lepas di luar segala
+   * container ber-scroll/animasi, baru dirasterisasi di sana.
+   */
   async function render(): Promise<string> {
-    const node = document.getElementById("struk");
-    if (!node) throw new Error("Struk tidak ditemukan");
-    return toPng(node, { pixelRatio: 2, backgroundColor: "#ffffff", cacheBust: true });
+    const source = document.getElementById("struk");
+    if (!source) throw new Error("Struk tidak ditemukan");
+
+    const stage = document.createElement("div");
+    stage.setAttribute("aria-hidden", "true");
+    stage.style.cssText = [
+      "position:fixed",
+      "left:-10000px",
+      "top:0",
+      "width:460px",
+      "background:#ffffff",
+      "overflow:visible",
+      "pointer-events:none",
+      "z-index:-1",
+    ].join(";");
+    document.body.appendChild(stage);
+
+    const clone = source.cloneNode(true) as HTMLElement;
+    clone.id = "struk-export";
+    clone.style.margin = "0";
+    clone.style.transform = "none";
+    clone.style.width = "460px";
+    clone.style.position = "relative";
+    stage.appendChild(clone);
+
+    try {
+      if (document.fonts?.ready) await document.fonts.ready;
+      // satu frame supaya layout sudah stabil sebelum diukur
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+      const width = clone.offsetWidth;
+      const height = clone.offsetHeight;
+
+      return await toPng(clone, {
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+        width,
+        height,
+        style: { width: `${width}px`, height: `${height}px`, transform: "none", margin: "0" },
+        cacheBust: true,
+      });
+    } finally {
+      stage.remove();
+    }
   }
 
   async function download() {
