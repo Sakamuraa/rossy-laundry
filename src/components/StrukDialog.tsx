@@ -26,17 +26,51 @@ export function StrukDialog({ order }: { order: Order }) {
 
   const file = `${order.orderNumber}.png`;
 
-  /** Cetak: bungkus window.print() dengan class sementara supaya hanya #struk yang ikut. */
+  /**
+   * Cetak lewat jendela terpisah yang isinya cuma struk.
+   *
+   * window.print() biasa tidak bisa dipakai: struk hidup di dalam portal dialog
+   * yang `position: fixed`, jadi `top:0` pada struk menempel ke dialog, bukan ke
+   * halaman - PDF hasilnya 3 halaman A5. Dengan halaman bersih sendiri tidak ada
+   * posisi dialog atau overflow container yang perlu dilawan.
+   */
   function print() {
-    const root = document.documentElement;
-    const done = () => {
-      root.classList.remove("printing-struk");
-      window.removeEventListener("afterprint", done);
-    };
-    root.classList.add("printing-struk");
-    window.addEventListener("afterprint", done);
-    window.print();
-    window.setTimeout(done, 3000);
+    const src = document.getElementById("struk");
+    if (!src) {
+      toast.error("Struk tidak ditemukan.");
+      return;
+    }
+
+    const w = window.open("", "_blank", "width=760,height=1000");
+    if (!w) {
+      toast.error("Jendela cetak diblokir peramban. Izinkan pop-up lalu coba lagi.");
+      return;
+    }
+
+    const sheets = [...document.querySelectorAll('link[rel="stylesheet"]')]
+      .map((l) => (l as HTMLLinkElement).outerHTML)
+      .join("");
+    const inline = [...document.querySelectorAll("style")]
+      .map((s) => s.outerHTML)
+      .join("");
+
+    // A4: lebar cetak 190mm > 460px struk, tinggi cetak 277mm > 842px struk -> muat satu lembar.
+    const css = [
+      "@page { size: A4; margin: 10mm; }",
+      "html, body { margin: 0; padding: 0; background: #fff; }",
+      "@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }",
+    ].join("\n");
+
+    w.document.open();
+    w.document.write(
+      '<!doctype html><html lang="id"><head><meta charset="utf-8">' +
+        `<title>Struk ${order.orderNumber}</title>` +
+        `${sheets}${inline}` +
+        `<style>${css}</style></head><body>${src.outerHTML}</body></html>`
+    );
+    w.document.close();
+    w.focus();
+    window.setTimeout(() => w.print(), 500);
   }
 
   /**
